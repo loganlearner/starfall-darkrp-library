@@ -1,6 +1,7 @@
 if engine.ActiveGamemode() ~= "darkrp" then return end
 util.AddNetworkString("sf_moneyrequest")
 
+local moneyRequestIndex = 1
 local moneyRequests = {}
 local checkluatype = SF.CheckLuaType
 
@@ -41,6 +42,7 @@ function ply_methods:giveMoney(amount)
 end
 
 function ply_methods:requestMoney(amount, callbackSuccess, callbackFail)
+    local requester = owner
     local requestee = getply(self)
 
     checkluatype(amount, TYPE_NUMBER)
@@ -48,10 +50,9 @@ function ply_methods:requestMoney(amount, callbackSuccess, callbackFail)
     if callbackFail then checkluatype(callbackFail, TYPE_FUNCTION) end
     if callbackTimeout then checkluatype(callbackTimeout, TYPE_FUNCTION) end
 
-
     local request = {
-        index = ...,
-        requester = owner,
+        index = moneyRequestIndex,
+        requester = requester,
         requestee = requestee,
         amount = amount,
         success = function()
@@ -62,18 +63,21 @@ function ply_methods:requestMoney(amount, callbackSuccess, callbackFail)
         end
     }
 
+
     if requestee:canAfford(amount) then
         net.Start("sf_moneyrequest")
-
+            net.WriteFloat(moneyRequestIndex)
+            net.WriteEntity(requester)
+            net.WriteFloat(math.Round(amount))
         net.Send(requestee)
 
         table.insert(moneyRequests, request)
     else
-        DarkRP.notify(owner, 1, 4, "The user cannot afford this")
+        DarkRP.notify(requester, 1, 4, "The user cannot afford this")
         request.fail("REQUEST_NOMONEY")
     end
 
-    request.fail("REQUEST_UNKNOWN")
+    moneyRequestIndex = moneyRequestIndex + 1
 end
 
 function darkrp_library.formatMoney(amount)
