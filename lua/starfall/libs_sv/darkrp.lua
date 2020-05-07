@@ -1,5 +1,7 @@
 if engine.ActiveGamemode() ~= "darkrp" then return end
 util.AddNetworkString("sf_moneyrequest")
+util.AddNetworkString("sf_moneyrequest_accept")
+util.AddNetworkString("sf_moneyrequest_deny")
 
 local moneyRequestIndex = 1
 local moneyRequests = {}
@@ -24,6 +26,21 @@ local function getply(self)
     end
 end
 
+local function getMoneyRequestFromIndex(index)
+    for _, request in pairs(moneyRequests) do
+        if request["index"] == index then
+            return request
+        end
+    end
+end
+
+local function payPlayer(ply1, ply2, amount)
+    ply1:ChatPrint("You gave " .. ply2:Name() .. " " .. DarkRP.formatMoney(amount) .. "!")
+    ply2:ChatPrint(ply1:Name() .. " gave you " .. DarkRP.formatMoney(amount) .. "!")
+
+    DarkRP.payPlayer(owner, givee, amount)
+end
+
 function ply_methods:getMoney()
     return getply(self).DarkRPVars.money
 end
@@ -33,9 +50,7 @@ function ply_methods:giveMoney(amount)
     local givee = getply(self)
 
     if owner:canAfford(amount) then
-        owner:ChatPrint("You gave " .. givee:Name() .. " " .. DarkRP.formatMoney(amount) .. "!")
-        givee:ChatPrint(owner:Name() .. " gave you " .. DarkRP.formatMoney(amount) .. "!")
-        DarkRP.payPlayer(owner, givee, amount)
+        payPlayer(owner, givee, amount)
     else
         DarkRP.notify(owner, 1, 4, DarkRP.getPhrase("cant_afford", ""))
     end
@@ -79,6 +94,25 @@ function ply_methods:requestMoney(amount, callbackSuccess, callbackFail)
 
     moneyRequestIndex = moneyRequestIndex + 1
 end
+
+net.Receive("sf_moneyrequest_accept", function()
+    local index = net.ReadFloat()
+    local request = getMoneyRequestFromIndex(index)
+
+    request.success()
+    payPlayer(request.requestee, request.requester, request.amount)
+
+    table.RemoveByValue(moneyRequests, request)
+end)
+
+net.Receive("sf_moneyrequest_deny", function()
+    local index = net.ReadFloat()
+    local request = getMoneyRequestFromIndex(index)
+
+    request.fail("REQUEST_DENIED")
+
+    table.RemoveByValue(moneyRequests, request)
+end)
 
 function darkrp_library.formatMoney(amount)
     checkluatype(amount, TYPE_NUMBER)

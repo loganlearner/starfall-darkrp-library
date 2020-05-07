@@ -22,6 +22,10 @@ local function createRequest(index, requester, amount)
     acceptButton:Dock(LEFT)
 
     acceptButton.DoClick = function()
+        net.Start("sf_moneyrequest_accept")
+            net.WriteFloat(index)
+        net.SendToServer()
+
         p:Close()
     end
 
@@ -30,6 +34,10 @@ local function createRequest(index, requester, amount)
     denyButton:Dock(RIGHT)
 
     denyButton.DoClick = function()
+        net.Start("sf_moneyrequest_deny")
+            net.WriteFloat(index)
+        net.SendToServer()
+
         p:Close()
     end
 end
