@@ -49,6 +49,8 @@ function ply_methods:giveMoney(amount)
     checkluatype(amount, TYPE_NUMBER)
     local givee = getply(self)
 
+    amount = math.Clamp(amount, 0, math.huge)
+
     if owner:canAfford(amount) then
         payPlayer(owner, givee, amount)
     else
