@@ -12,14 +12,6 @@ local darkrp_library = instance.Libraries.darkrp
 local unwrap = instance.Types.Player.Unwrap
 local ply_meta, ply_methods = instance.Types.Player, instance.Types.Player.Methods
 
-local function runCallback(callback)
-    return function(...)
-        if callback then
-            instance:runFunction(callback, ...)
-        end
-    end
-end
-
 local function getply(self)
     local ent = unwrap(self)
 
@@ -49,6 +41,7 @@ end
 
 --[[
 function ply_methods:requestMoney(amount, callbackSuccess, callbackFail, callbackTimeout)
+    --instance:runFunction(callback, ...)
     local requestee = getply(self)
 
     checkluatype(amount, TYPE_NUMBER)
