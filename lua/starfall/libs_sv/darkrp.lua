@@ -1,5 +1,6 @@
 if engine.ActiveGamemode() ~= "darkrp" then return end
 
+local moneyRequests = {}
 local checkluatype = SF.CheckLuaType
 
 SF.RegisterLibrary("darkrp")
@@ -10,6 +11,14 @@ local owner, checktype = instance.player, instance.CheckType
 local darkrp_library = instance.Libraries.darkrp
 local unwrap = instance.Types.Player.Unwrap
 local ply_meta, ply_methods = instance.Types.Player, instance.Types.Player.Methods
+
+local function runCallback(callback)
+    return function(...)
+        if callback then
+            instance:runFunction(callback, ...)
+        end
+    end
+end
 
 local function getply(self)
     local ent = unwrap(self)
@@ -36,6 +45,26 @@ function ply_methods:giveMoney(amount)
     else
         DarkRP.notify(owner, 1, 4, DarkRP.getPhrase("cant_afford", ""))
     end
+end
+
+--[[
+function ply_methods:requestMoney(amount, callbackSuccess, callbackFail, callbackTimeout)
+    local requestee = getply(self)
+
+    checkluatype(amount, TYPE_NUMBER)
+    checkluatype(callbackSuccess, TYPE_FUNCTION)
+    if callbackFail then checkluatype(callbackFail, TYPE_FUNCTION) end
+    if callbackTimeout then checkluatype(callbackTimeout, TYPE_FUNCTION) end
+
+    if requestee:canAfford(amount) then
+        
+    end
+end
+]]
+
+function darkrp_library.formatMoney(amount)
+    checkluatype(amount, TYPE_NUMBER)
+    return DarkRP.formatMoney(amount)
 end
 
 end
