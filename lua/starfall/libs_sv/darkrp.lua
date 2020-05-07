@@ -14,7 +14,7 @@ return function(instance)
 local owner, checktype = instance.player, instance.CheckType
 local darkrp_library = instance.Libraries.darkrp
 local unwrap = instance.Types.Player.Unwrap
-local ply_meta, ply_methods = instance.Types.Player, instance.Types.Player.Methods
+local ply_methods = instance.Types.Player.Methods
 
 local function getply(self)
     local ent = unwrap(self)
@@ -28,7 +28,7 @@ end
 
 local function getMoneyRequestFromIndex(index)
     for _, request in pairs(moneyRequests) do
-        if request["index"] == index then
+        if request.index == index then
             return request
         end
     end
@@ -38,7 +38,7 @@ local function payPlayer(ply1, ply2, amount)
     ply1:ChatPrint("You gave " .. ply2:Name() .. " " .. DarkRP.formatMoney(amount) .. "!")
     ply2:ChatPrint(ply1:Name() .. " gave you " .. DarkRP.formatMoney(amount) .. "!")
 
-    DarkRP.payPlayer(owner, givee, amount)
+    DarkRP.payPlayer(ply1, ply2, amount)
 end
 
 function ply_methods:getMoney()
@@ -56,7 +56,7 @@ function ply_methods:giveMoney(amount)
     end
 end
 
-function ply_methods:requestMoney(amount, callbackSuccess, callbackFail)
+function ply_methods:requestMoney(amount, callbackSuccess, callbackFail, callbackTimeout)
     local requester = owner
     local requestee = getply(self)
 
@@ -70,11 +70,15 @@ function ply_methods:requestMoney(amount, callbackSuccess, callbackFail)
         requester = requester,
         requestee = requestee,
         amount = amount,
+        expiration = CurTime() + 30,
         success = function()
             callbackSuccess()
         end,
         fail = function(failReason)
             callbackFail(failReason)
+        end,
+        timeout = function()
+            callbackTimeout()
         end
     }
 
@@ -99,8 +103,8 @@ net.Receive("sf_moneyrequest_accept", function()
     local index = net.ReadFloat()
     local request = getMoneyRequestFromIndex(index)
 
-    request.success()
     payPlayer(request.requestee, request.requester, request.amount)
+    request.success()
 
     table.RemoveByValue(moneyRequests, request)
 end)
@@ -118,5 +122,15 @@ function darkrp_library.formatMoney(amount)
     checkluatype(amount, TYPE_NUMBER)
     return DarkRP.formatMoney(amount)
 end
+
+hook.Add("Tick", "sf_dark_timeout_check", function()
+    for _, request in pairs(moneyRequests) do
+        if CurTime() >= request.expiration then
+            request.timeout()
+
+            table.RemoveByValue(moneyRequests, request)
+        end
+    end
+end)
 
 end

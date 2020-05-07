@@ -1,7 +1,10 @@
 local function createRequest(index, requester, amount)
+    local EndTime = CurTime() + 30
+    EmitSound(Sound("garrysmod/content_downloaded.wav"), Vector(), -1)
+
     local p = vgui.Create("DFrame")
     p:SetTitle("SF Money Request")
-    p:SetSize(400, 235)
+    p:SetSize(400, 200)
     p:Center()
     p:ShowCloseButton(false)
     p:SetSizable(false)
@@ -10,15 +13,21 @@ local function createRequest(index, requester, amount)
     function p:Paint(w, h)
         surface.SetDrawColor(Color(44, 54, 92, 254))
         surface.DrawRect(0, 0, w, h)
+
+        p:SetTitle("SF Money Request - " .. math.Round(EndTime - CurTime()))
     end
 
     local rightDiv = vgui.Create("DPanel", p)
     rightDiv:SetWide(300)
     rightDiv:Dock(RIGHT)
-    rightDiv.Paint = nil
+    --rightDiv.Paint = nil
 
-    local acceptButton = vgui.Create("DButton", rightDiv)
-    acceptButton:DockMargin(50, 50, 50, 50)
+    local buttonDiv = vgui.Create("DPanel", rightDiv)
+    buttonDiv:SetTall(100)
+    buttonDiv:Dock(BOTTOM)
+
+    local acceptButton = vgui.Create("DButton", buttonDiv)
+    --acceptButton:DockMargin(50, 50, 50, 50)
     acceptButton:Dock(LEFT)
 
     acceptButton.DoClick = function()
@@ -29,8 +38,8 @@ local function createRequest(index, requester, amount)
         p:Close()
     end
 
-    local denyButton = vgui.Create("DButton", rightDiv)
-    denyButton:DockMargin(50, 50, 50, 50)
+    local denyButton = vgui.Create("DButton", buttonDiv)
+    --denyButton:DockMargin(50, 50, 50, 50)
     denyButton:Dock(RIGHT)
 
     denyButton.DoClick = function()
@@ -40,6 +49,10 @@ local function createRequest(index, requester, amount)
 
         p:Close()
     end
+
+    timer.Simple(30, function()
+        p:Close()
+    end)
 end
 
 net.Receive("sf_moneyrequest", function()
