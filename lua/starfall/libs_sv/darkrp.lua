@@ -65,6 +65,8 @@ function ply_methods:requestMoney(amount, callbackSuccess, callbackFail, callbac
     if callbackFail then checkluatype(callbackFail, TYPE_FUNCTION) end
     if callbackTimeout then checkluatype(callbackTimeout, TYPE_FUNCTION) end
 
+    amount = math.Clamp(amount, 0, math.huge)
+
     local request = {
         index = moneyRequestIndex,
         requester = requester,
