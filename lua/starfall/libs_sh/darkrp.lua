@@ -11,6 +11,7 @@ local moneyRequests = {}
 local checkluatype = SF.CheckLuaType
 local drp_shipments
 
+-- Waiting for the CustomShipments table to load
 timer.Simple(1, function()
     drp_shipments = CustomShipments
 end)
@@ -27,18 +28,23 @@ SF.RegisterLibrary("darkrp")
 
 return function(instance)
 
-local owner, checktype = instance.player, instance.CheckType
 local darkrp_library = instance.Libraries.darkrp
-local unwrap = instance.Types.Player.Unwrap
+local owner, checktype = instance.player, instance.CheckType
 local ply_methods, ent_methods = instance.Types.Player.Methods, instance.Types.Entity.Methods
-local getent
+local ply_meta, punwrap = instance.Types.Player, instance.Types.Player.Unwrap
+local ent_meta, eunwrap = instance.Types.Entity, instance.Types.Entity.Unwrap
 
-instance:AddHook("initialize", function()
-    getent = instance.Types.Entity.GetEntity
-end)
+local function getent(self)
+    local ent = eunwrap(self)
+    if ent:IsValid() or ent:IsWorld() then
+        return ent
+    else
+        SF.Throw("Entity is not valid.", 3)
+    end
+end
 
 local function getply(self)
-    local ent = unwrap(self)
+    local ent = punwrap(self)
 
     if ent:IsValid() then
         return ent
@@ -47,7 +53,6 @@ local function getply(self)
     end
 end
 
--- Credits to TylerB for the following two functions
 local function getShipment(ent)
     if not ent then return falseShipment end
     if not isentity(ent) then return falseShipment end
@@ -80,7 +85,8 @@ end
 
 ---
 
-function ent_methods:shipmentName()
+function ent_methods:shipmentName(ent)
+    checktype(self, ent_meta)
     return getShipment(getent(self)).name
 end
 
@@ -92,12 +98,14 @@ end
 ---
 
 function ent_methods:isShipment()
+    checktype(self, ent_meta)
     return self:GetClass() == "spawned_shipment"
 end
 
 ---
 
 function ent_methods:shipmentClass()
+    checktype(self, ent_meta)
     return getShipment(getent(self)).entity
 end
 
@@ -109,6 +117,7 @@ end
 ---
 
 function ent_methods:shipmentSize()
+    checktype(self, ent_meta)
     return getShipment(getent(self)).amount
 end
 
@@ -120,6 +129,7 @@ end
 ---
 
 function ent_methods:shipmentAmountLeft()
+    checktype(self, ent_meta)
     local ent = getent(self)
     if ent:GetClass() ~= "spawned_shipment" then return end
 
@@ -129,6 +139,7 @@ end
 ---
 
 function ent_methods:shipmentModel()
+    checktype(self, ent_meta)
     return getShipment(getent(self)).model
 end
 
@@ -140,6 +151,7 @@ end
 ---
 
 function ent_methods:shipmentPrice()
+    checktype(self, ent_meta)
     return getShipment(getent(self)).price
 end
 
@@ -151,6 +163,7 @@ end
 ---
 
 function ent_methods:shipmentPriceSeparate()
+    checktype(self, ent_meta)
     local ent = getShipment(getent(self))
 
     return ent.price / ent.amount
