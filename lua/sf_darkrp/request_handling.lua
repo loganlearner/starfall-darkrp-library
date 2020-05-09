@@ -21,6 +21,18 @@ local function getValuesFromQuery(tbl)
     return out
 end
 
+local function acceptRequest(index)
+    net.Start("sf_moneyrequest_accept")
+        net.WriteFloat(index)
+    net.SendToServer()
+end
+
+local function denyRequest(index)
+    net.Start("sf_moneyrequest_deny")
+        net.WriteFloat(index)
+    net.SendToServer()
+end
+
 local function removeSteamID(steamid)
     sql.Query("DELETE FROM sf_moneyrequest_blocked_players WHERE steamid="..SQLStr(steamid))
 end
@@ -58,11 +70,7 @@ end
 
 local function createRequest(index, requester, amount)
     if not canRequest(requester:SteamID()) or not canRequest(requester:SteamID64()) then 
-        net.Start("sf_moneyrequest_deny")
-            net.WriteFloat(index)
-        net.SendToServer()
-
-        return
+        return denyRequest(index)
     end
 
     local EndTime = CurTime() + 30
@@ -138,9 +146,7 @@ local function createRequest(index, requester, amount)
     end
 
     acceptButton.DoClick = function()
-        net.Start("sf_moneyrequest_accept")
-            net.WriteFloat(index)
-        net.SendToServer()
+        acceptRequest(index)
 
         p:Close()
     end
@@ -161,9 +167,7 @@ local function createRequest(index, requester, amount)
     end
 
     denyButton.DoClick = function()
-        net.Start("sf_moneyrequest_deny")
-            net.WriteFloat(index)
-        net.SendToServer()
+        denyRequest(index)
 
         p:Close()
     end
@@ -184,6 +188,7 @@ local function createRequest(index, requester, amount)
 
     blockButton.DoClick = function()
         blockUser(requester)
+        denyRequest(index)
         p:Close()
     end
 end

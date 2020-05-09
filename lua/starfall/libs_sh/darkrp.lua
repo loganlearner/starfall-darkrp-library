@@ -40,8 +40,6 @@ if SERVER then
     util.AddNetworkString("sf_moneyrequest_accept")
     util.AddNetworkString("sf_moneyrequest_deny")
 
-
-
     net.Receive("sf_moneyrequest_accept", function()
         local index = net.ReadFloat()
         local request = getMoneyRequestFromIndex(index)
