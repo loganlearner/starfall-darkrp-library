@@ -3,6 +3,8 @@ if engine.ActiveGamemode() ~= "darkrp" then return end
 local moneyRequestIndex = 0
 local moneyRequests = {}
 local checkluatype = SF.CheckLuaType
+local checkpermission = SF.Permissions.check
+local registerprivilege = SF.Permissions.registerPrivilege
 local drp_shipments
 
 -- Waiting for the CustomShipments table to load
@@ -39,6 +41,9 @@ if SERVER then
     util.AddNetworkString("sf_moneyrequest")
     util.AddNetworkString("sf_moneyrequest_accept")
     util.AddNetworkString("sf_moneyrequest_deny")
+
+    registerprivilege("darkrp.giveMoney", "DarkRP GiveMoney", "Allows the user to give money to other players", { entities = { default = 1 } })
+    registerprivilege("darkrp.requestMoney", "DarkRP GiveMoney", "Allows the user to request money from other players", { entities = { default = 1 } })
 
     net.Receive("sf_moneyrequest_accept", function()
         local index = net.ReadFloat()
@@ -102,7 +107,7 @@ end
 local function getShipment(ent)
     if not ent then return falseShipment end
     if not isentity(ent) then return falseShipment end
-    if ent:GetClass() ~= "spawned_shipment" then return end
+    if ent:GetClass() ~= "spawned_shipment" then return falseShipment end
 
     for index, shipment in pairs(drp_shipments) do
         if index == ent:Getcontents() then
@@ -122,6 +127,8 @@ local function getShipmentFromClass(class)
             return shipment
         end
     end
+
+    return falseShipment
 end
 
 function darkrp_library.formatMoney(amount)
@@ -225,13 +232,17 @@ end
 ---
 
 function player_methods:getMoney()
+    checktype(self, ply_meta)
     return getply(self):getDarkRPVar("money")
 end
 
 if SERVER then
     function player_methods:giveMoney(amount)
+        checktype(self, ply_meta)
         checkluatype(amount, TYPE_NUMBER)
+
         local givee = getply(self)
+        checkpermission(instance, givee, "darkrp.giveMoney")
 
         amount = math.Clamp(amount, 0, math.huge)
 
@@ -243,8 +254,11 @@ if SERVER then
     end
 
     function player_methods:requestMoney(amount, callbackSuccess, callbackFail, callbackTimeout)
+        checktype(self, ply_meta)
+
         local requester = owner
         local requestee = getply(self)
+        checkpermission(instance, requestee, "darkrp.requestMoney")
 
         checkluatype(amount, TYPE_NUMBER)
         if callbackSuccess then checkluatype(callbackSuccess, TYPE_FUNCTION) end
