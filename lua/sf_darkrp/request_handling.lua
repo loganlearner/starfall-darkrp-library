@@ -1,3 +1,5 @@
+local blockedUsers = blockedUsers or {}
+
 surface.CreateFont("DermaMoney", {
     font = "DermaLarge",
     size = 24
@@ -9,7 +11,60 @@ surface.CreateFont("DermaMoneyButton", {
     weight = 900
 })
 
+local function getValuesFromQuery(tbl)
+    local out = {}
+
+    for _, v in pairs(tbl) do
+        table.insert(out, v["steamid"])
+    end
+
+    return out
+end
+
+local function removeSteamID(steamid)
+    sql.Query("DELETE FROM sf_moneyrequest_blocked_players WHERE steamid="..SQLStr(steamid))
+end
+
+local function insertSteamID(steamid)
+    sql.Query("INSERT INTO sf_moneyrequest_blocked_players (steamid) VALUES(" .. SQLStr(steamid) .. ")")
+end
+
+local function unblockID(steamid)
+    if not steamid then return end
+
+    table.RemoveByValue(blockedUsers, steamid)
+    removeSteamID(steamid)
+end
+
+local function blockID(steamid)
+    if not steamid then return end
+
+    table.insert(blockedUsers, steamid)
+    insertSteamID(steamid)
+end
+
+local function blockUser(requester)
+    if not IsValid(requester) then return end
+    local name = requester:Name()
+    local steamid64 = requester:SteamID64()
+
+    table.insert(blockedUsers, steamid64)
+    insertSteamID(steamid64)
+end
+
+local function canRequest(steamid)
+    return not table.HasValue(blockedUsers, steamid)
+end
+
 local function createRequest(index, requester, amount)
+    if not canRequest(requester:SteamID()) or not canRequest(requester:SteamID64()) then 
+        net.Start("sf_moneyrequest_deny")
+            net.WriteFloat(index)
+        net.SendToServer()
+
+        return
+    end
+
     local EndTime = CurTime() + 30
     EmitSound(Sound("garrysmod/content_downloaded.wav"), Vector(), -1)
 
@@ -112,6 +167,25 @@ local function createRequest(index, requester, amount)
 
         p:Close()
     end
+
+    local blockButton = vgui.Create("DButton", p)
+    blockButton:SetPos(345, 5)
+    blockButton:SetSize(50, 15)
+    blockButton:SetText("Block")
+    blockButton:SetTextColor(Color(255, 255, 255))
+    blockButton:SetFont("DermaDefault")
+
+    function blockButton:Paint(w, h)
+        local isHovering = self:IsHovered()
+        local col = isHovering and Color(229, 72, 72) or Color(227, 52, 52)
+        surface.SetDrawColor(col)
+        surface.DrawRect(0, 0, w, h)
+    end
+
+    blockButton.DoClick = function()
+        blockUser(requester)
+        p:Close()
+    end
 end
 
 net.Receive("sf_moneyrequest", function()
@@ -120,4 +194,23 @@ net.Receive("sf_moneyrequest", function()
     local amount = net.ReadFloat()
 
     createRequest(index, requester, amount)
+end)
+
+hook.Add("Initialize", "sf_moneyrequest_init", function()
+    sql.QueryRow("CREATE TABLE IF NOT EXISTS sf_moneyrequest_blocked_players(steamid TEXT PRIMARY KEY)")
+    blockedUsers = sql.Query("SELECT * FROM sf_moneyrequest_blocked_players") or {}
+    blockedUsers = getValuesFromQuery(blockedUsers)
+    PrintTable(blockedUsers)
+end)
+
+concommand.Add("sf_moneyrequest_block_steamid", function(_, _, args)
+    blockID(table.concat(args))
+end)
+
+concommand.Add("sf_moneyrequest_unblock_steamid", function(_, _, args)
+    unblockID(table.concat(args))
+end)
+
+concommand.Add("sf_moneyrequest_blocklist", function()
+    PrintTable(blockedUsers)
 end)

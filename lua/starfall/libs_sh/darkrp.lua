@@ -1,11 +1,5 @@
 if engine.ActiveGamemode() ~= "darkrp" then return end
 
-if SERVER then
-    util.AddNetworkString("sf_moneyrequest")
-    util.AddNetworkString("sf_moneyrequest_accept")
-    util.AddNetworkString("sf_moneyrequest_deny")
-end
-
 local moneyRequestIndex = 0
 local moneyRequests = {}
 local checkluatype = SF.CheckLuaType
@@ -23,6 +17,60 @@ local falseShipment = {
     model = "models/error.mdl",
     entity = "invalid_shipment"
 }
+
+local function getMoneyRequestFromIndex(index)
+    for _, request in pairs(moneyRequests) do
+        if request.index == index then
+            return request
+        end
+    end
+end
+
+local function payPlayer(ply1, ply2, amount)
+    if SERVER then
+        ply1:ChatPrint("You gave " .. ply2:Name() .. " " .. DarkRP.formatMoney(amount) .. "!")
+        ply2:ChatPrint(ply1:Name() .. " gave you " .. DarkRP.formatMoney(amount) .. "!")
+
+        DarkRP.payPlayer(ply1, ply2, amount)
+    end
+end
+
+if SERVER then
+    util.AddNetworkString("sf_moneyrequest")
+    util.AddNetworkString("sf_moneyrequest_accept")
+    util.AddNetworkString("sf_moneyrequest_deny")
+
+
+
+    net.Receive("sf_moneyrequest_accept", function()
+        local index = net.ReadFloat()
+        local request = getMoneyRequestFromIndex(index)
+
+        payPlayer(request.requestee, request.requester, request.amount)
+        request.success()
+
+        table.RemoveByValue(moneyRequests, request)
+    end)
+
+    net.Receive("sf_moneyrequest_deny", function()
+        local index = net.ReadFloat()
+        local request = getMoneyRequestFromIndex(index)
+
+        request.fail("REQUEST_DENIED")
+
+        table.RemoveByValue(moneyRequests, request)
+    end)
+
+    hook.Add("Tick", "sf_dark_timeout_check", function()
+        for _, request in pairs(moneyRequests) do
+            if CurTime() >= request.expiration then
+                request.fail("REQUEST_TIMEOUT")
+
+                table.RemoveByValue(moneyRequests, request)
+            end
+        end
+    end)
+end
 
 SF.RegisterLibrary("darkrp")
 
@@ -183,21 +231,6 @@ function ply_methods:getMoney()
 end
 
 if SERVER then
-    local function getMoneyRequestFromIndex(index)
-        for _, request in pairs(moneyRequests) do
-            if request.index == index then
-                return request
-            end
-        end
-    end
-
-    local function payPlayer(ply1, ply2, amount)
-        ply1:ChatPrint("You gave " .. ply2:Name() .. " " .. DarkRP.formatMoney(amount) .. "!")
-        ply2:ChatPrint(ply1:Name() .. " gave you " .. DarkRP.formatMoney(amount) .. "!")
-
-        DarkRP.payPlayer(ply1, ply2, amount)
-    end
-    
     function ply_methods:giveMoney(amount)
         checkluatype(amount, TYPE_NUMBER)
         local givee = getply(self)
@@ -214,13 +247,14 @@ if SERVER then
     function ply_methods:requestMoney(amount, callbackSuccess, callbackFail, callbackTimeout)
         local requester = owner
         local requestee = getply(self)
-        print(requester)
-        print(requestee)
 
         checkluatype(amount, TYPE_NUMBER)
         checkluatype(callbackSuccess, TYPE_FUNCTION)
         if callbackFail then checkluatype(callbackFail, TYPE_FUNCTION) end
-        if callbackTimeout then checkluatype(callbackTimeout, TYPE_FUNCTION) end
+
+        if not callbackFail then 
+            callbackFail = function() end
+        end
 
         amount = math.Clamp(amount, 0, math.huge)
 
@@ -235,9 +269,6 @@ if SERVER then
             end,
             fail = function(failReason)
                 callbackFail(failReason)
-            end,
-            timeout = function()
-                callbackTimeout()
             end
         }
 
@@ -257,35 +288,6 @@ if SERVER then
 
         moneyRequestIndex = (moneyRequestIndex + 1) % 500
     end
-
-    net.Receive("sf_moneyrequest_accept", function()
-        local index = net.ReadFloat()
-        local request = getMoneyRequestFromIndex(index)
-
-        payPlayer(request.requestee, request.requester, request.amount)
-        request.success()
-
-        table.RemoveByValue(moneyRequests, request)
-    end)
-
-    net.Receive("sf_moneyrequest_deny", function()
-        local index = net.ReadFloat()
-        local request = getMoneyRequestFromIndex(index)
-
-        request.fail("REQUEST_DENIED")
-
-        table.RemoveByValue(moneyRequests, request)
-    end)
-
-    hook.Add("Tick", "sf_dark_timeout_check", function()
-        for _, request in pairs(moneyRequests) do
-            if CurTime() >= request.expiration then
-                request.timeout()
-
-                table.RemoveByValue(moneyRequests, request)
-            end
-        end
-    end)
 end
 
 end
