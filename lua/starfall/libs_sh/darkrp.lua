@@ -76,7 +76,7 @@ return function(instance)
 
 local darkrp_library = instance.Libraries.darkrp
 local owner, checktype = instance.player, instance.CheckType
-local ply_methods, ent_methods = instance.Types.Player.Methods, instance.Types.Entity.Methods
+local player_methods, ents_methods = instance.Types.Player.Methods, instance.Types.Entity.Methods
 local ply_meta, punwrap = instance.Types.Player, instance.Types.Player.Unwrap
 local ent_meta, eunwrap = instance.Types.Entity, instance.Types.Entity.Unwrap
 
@@ -131,7 +131,7 @@ end
 
 ---
 
-function ent_methods:shipmentName(ent)
+function ents_methods:shipmentName(ent)
     checktype(self, ent_meta)
     return getShipment(getent(self)).name
 end
@@ -143,14 +143,14 @@ end
 
 ---
 
-function ent_methods:isShipment()
+function ents_methods:isShipment()
     checktype(self, ent_meta)
     return self:GetClass() == "spawned_shipment"
 end
 
 ---
 
-function ent_methods:shipmentClass()
+function ents_methods:shipmentClass()
     checktype(self, ent_meta)
     return getShipment(getent(self)).entity
 end
@@ -162,7 +162,7 @@ end
 
 ---
 
-function ent_methods:shipmentSize()
+function ents_methods:shipmentSize()
     checktype(self, ent_meta)
     return getShipment(getent(self)).amount
 end
@@ -174,7 +174,7 @@ end
 
 ---
 
-function ent_methods:shipmentAmountLeft()
+function ents_methods:shipmentAmountLeft()
     checktype(self, ent_meta)
     local ent = getent(self)
     if ent:GetClass() ~= "spawned_shipment" then return end
@@ -184,7 +184,7 @@ end
 
 ---
 
-function ent_methods:shipmentModel()
+function ents_methods:shipmentModel()
     checktype(self, ent_meta)
     return getShipment(getent(self)).model
 end
@@ -196,7 +196,7 @@ end
 
 ---
 
-function ent_methods:shipmentPrice()
+function ents_methods:shipmentPrice()
     checktype(self, ent_meta)
     return getShipment(getent(self)).price
 end
@@ -208,7 +208,7 @@ end
 
 ---
 
-function ent_methods:shipmentPriceSeparate()
+function ents_methods:shipmentPriceSeparate()
     checktype(self, ent_meta)
     local ent = getShipment(getent(self))
 
@@ -224,12 +224,12 @@ end
 
 ---
 
-function ply_methods:getMoney()
+function player_methods:getMoney()
     return getply(self):getDarkRPVar("money")
 end
 
 if SERVER then
-    function ply_methods:giveMoney(amount)
+    function player_methods:giveMoney(amount)
         checkluatype(amount, TYPE_NUMBER)
         local givee = getply(self)
 
@@ -242,7 +242,7 @@ if SERVER then
         end
     end
 
-    function ply_methods:requestMoney(amount, callbackSuccess, callbackFail, callbackTimeout)
+    function player_methods:requestMoney(amount, callbackSuccess, callbackFail, callbackTimeout)
         local requester = owner
         local requestee = getply(self)
 

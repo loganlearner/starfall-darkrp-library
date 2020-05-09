@@ -147,7 +147,6 @@ local function createRequest(index, requester, amount)
 
     acceptButton.DoClick = function()
         acceptRequest(index)
-
         p:Close()
     end
 
