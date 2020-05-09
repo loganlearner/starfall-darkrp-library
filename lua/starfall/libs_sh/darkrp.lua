@@ -249,8 +249,12 @@ if SERVER then
         local requestee = getply(self)
 
         checkluatype(amount, TYPE_NUMBER)
-        checkluatype(callbackSuccess, TYPE_FUNCTION)
+        if callbackSuccess then checkluatype(callbackSuccess, TYPE_FUNCTION) end
         if callbackFail then checkluatype(callbackFail, TYPE_FUNCTION) end
+
+        if not callbackSuccess then
+            callbackSuccess = function() end
+        end
 
         if not callbackFail then 
             callbackFail = function() end
