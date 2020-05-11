@@ -253,7 +253,7 @@ if SERVER then
         end
     end
 
-    function player_methods:requestMoney(amount, callbackSuccess, callbackFail, callbackTimeout)
+    function player_methods:requestMoney(amount, callbackSuccess, callbackFail)
         checktype(self, ply_meta)
 
         local requester = owner
