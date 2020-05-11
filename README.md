@@ -1,2 +1,6 @@
-# starfall-darkrp-library
-A Starfall Ex DarkRP library for Garry's Mod
+# Starfall DarkRP Library
+A Starfall DarkRP Library for Garry's Mod! This library includes some well known [TylerB](https://github.com/TylerB260) E2 functions such as money requests, give money, and shipment commands but remade for use in [Starfall](https://github.com/thegrb93/StarfallEx).
+
+## Installation:
+1. Install [Starfall Ex](https://github.com/thegrb93/StarfallEx) into your `/garrysmod/addons` folder
+2. Install this repository into your `/garrysmod/addons` folder
