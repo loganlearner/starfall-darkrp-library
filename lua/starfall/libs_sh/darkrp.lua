@@ -6,6 +6,8 @@ local checkluatype = SF.CheckLuaType
 local checkpermission = SF.Permissions.check
 local registerprivilege = SF.Permissions.registerPrivilege
 local drp_shipments
+local latestRequests
+local requestThrottle = 0.1
 
 -- Waiting for the CustomShipments table to load
 timer.Simple(1, function()
@@ -44,6 +46,8 @@ if SERVER then
 
     registerprivilege("darkrp.giveMoney", "DarkRP GiveMoney", "Allows the user to give money to other players", { entities = { default = 1 } })
     registerprivilege("darkrp.requestMoney", "DarkRP GiveMoney", "Allows the user to request money from other players", { entities = { default = 1 } })
+
+    latestRequests = {}
 
     net.Receive("sf_moneyrequest_accept", function()
         local index = net.ReadFloat()
@@ -237,6 +241,18 @@ function player_methods:getMoney()
 end
 
 if SERVER then
+    local function canRequest(player)
+        local lrPly = latestRequests[player:SteamID()]
+        if not lrPly then return true end
+
+        if CurTime() > (lrPly + requestThrottle) then
+            player:ChatPrint("You are making too many requests!")
+            return true
+        end
+
+        return false
+    end
+
     function player_methods:giveMoney(amount)
         checktype(self, ply_meta)
         checkluatype(amount, TYPE_NUMBER)
@@ -259,6 +275,8 @@ if SERVER then
         local requester = owner
         local requestee = getply(self)
         checkpermission(instance, requestee, "darkrp.requestMoney")
+
+        if not canRequest(requester) then return end
 
         checkluatype(amount, TYPE_NUMBER)
         if callbackSuccess then checkluatype(callbackSuccess, TYPE_FUNCTION) end
@@ -303,6 +321,7 @@ if SERVER then
         end
 
         moneyRequestIndex = (moneyRequestIndex + 1) % 500
+        latestRequests[requester:SteamID()] = CurTime()
     end
 end
 
