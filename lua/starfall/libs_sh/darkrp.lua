@@ -5,8 +5,7 @@ local moneyRequests = {}
 local checkluatype = SF.CheckLuaType
 local checkpermission = SF.Permissions.check
 local registerprivilege = SF.Permissions.registerPrivilege
-local drp_shipments
-local latestRequests
+local drp_shipments, latestRequests
 local requestThrottle = 0.1
 
 -- Waiting for the CustomShipments table to load
@@ -140,8 +139,6 @@ function darkrp_library.formatMoney(amount)
     return DarkRP.formatMoney(amount)
 end
 
----
-
 function ents_methods:shipmentName(ent)
     checktype(self, ent_meta)
     return getShipment(getent(self)).name
@@ -152,14 +149,10 @@ function darkrp_library.shipmentName(class)
     return getShipmentFromClass(class).name
 end
 
----
-
 function ents_methods:isShipment()
     checktype(self, ent_meta)
     return self:GetClass() == "spawned_shipment"
 end
-
----
 
 function ents_methods:shipmentClass()
     checktype(self, ent_meta)
@@ -171,8 +164,6 @@ function darkrp_library.shipmentClass(class)
     return getShipmentFromClass(class).entity
 end
 
----
-
 function ents_methods:shipmentSize()
     checktype(self, ent_meta)
     return getShipment(getent(self)).amount
@@ -183,8 +174,6 @@ function darkrp_library.shipmentSize(class)
     return getShipmentFromClass(class).amount
 end
 
----
-
 function ents_methods:shipmentAmountLeft()
     checktype(self, ent_meta)
     local ent = getent(self)
@@ -192,8 +181,6 @@ function ents_methods:shipmentAmountLeft()
 
     return ent:Getcount()
 end
-
----
 
 function ents_methods:shipmentModel()
     checktype(self, ent_meta)
@@ -205,8 +192,6 @@ function darkrp_library.shipmentModel(class)
     return getShipmentFromClass(class).model
 end
 
----
-
 function ents_methods:shipmentPrice()
     checktype(self, ent_meta)
     return getShipment(getent(self)).price
@@ -216,8 +201,6 @@ function darkrp_library.shipmentPrice(class)
     checkluatype(class, TYPE_STRING)
     return getShipmentFromClass(class).price
 end
-
----
 
 function ents_methods:shipmentPriceSeparate()
     checktype(self, ent_meta)
@@ -232,8 +215,6 @@ function darkrp_library.shipmentPriceSeparate(class)
 
     return ent.price / ent.amount
 end
-
----
 
 function player_methods:getMoney()
     checktype(self, ply_meta)
@@ -305,7 +286,6 @@ if SERVER then
                 callbackFail(failReason)
             end
         }
-
 
         if requestee:canAfford(amount) then
             net.Start("sf_moneyrequest")
