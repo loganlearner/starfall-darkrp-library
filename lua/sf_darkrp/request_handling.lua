@@ -68,7 +68,7 @@ local function canRequest(steamid)
     return not table.HasValue(blockedUsers, steamid)
 end
 
-local function createRequest(index, requester, amount)
+local function createRequest(title, index, requester, amount)
     if not canRequest(requester:SteamID()) or not canRequest(requester:SteamID64()) then 
         return denyRequest(index)
     end
@@ -77,7 +77,6 @@ local function createRequest(index, requester, amount)
     EmitSound(Sound("garrysmod/content_downloaded.wav"), Vector(), -1)
 
     local p = vgui.Create("DFrame")
-    p:SetTitle("SF Money Request")
     p:SetSize(400, 135)
     p:Center()
     p:ShowCloseButton(false)
@@ -91,7 +90,7 @@ local function createRequest(index, requester, amount)
         surface.SetDrawColor(Color(44, 54, 92, 254))
         surface.DrawRect(0, 0, w, h)
 
-        p:SetTitle("SF Money Request - " .. timeleft)
+        p:SetTitle(title .. " - " .. timeleft)
 
         if timeleft <= 0 then
             p:Close()
@@ -193,11 +192,13 @@ local function createRequest(index, requester, amount)
 end
 
 net.Receive("sf_moneyrequest", function()
+    local title = net.ReadString()
     local index = net.ReadFloat()
     local requester = net.ReadEntity()
     local amount = net.ReadFloat()
+    if title == "" then title = "Money Request" end
 
-    createRequest(index, requester, amount)
+    createRequest(title, index, requester, amount)
 end)
 
 hook.Add("Initialize", "sf_moneyrequest_init", function()

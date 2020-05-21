@@ -53,7 +53,7 @@ if SERVER then
         local request = getMoneyRequestFromIndex(index)
 
         payPlayer(request.requestee, request.requester, request.amount)
-        request.success()
+        request.success(request.title, request.requestee, request.amount)
 
         table.RemoveByValue(moneyRequests, request)
     end)
@@ -223,14 +223,15 @@ end
 
 if SERVER then
     local function canRequest(player)
+        PrintTable(latestRequests)
         local lrPly = latestRequests[player:SteamID()]
         if not lrPly then return true end
 
         if CurTime() > (lrPly + requestThrottle) then
-            player:ChatPrint("You are making too many requests!")
             return true
         end
 
+        player:ChatPrint("You are making too many requests!")
         return false
     end
 
@@ -250,8 +251,19 @@ if SERVER then
         end
     end
 
-    function player_methods:requestMoney(amount, callbackSuccess, callbackFail)
+    function player_methods:requestMoney(title, amount, callbackSuccess, callbackFail)
         checktype(self, ply_meta)
+
+        if title then 
+            checkluatype(title, TYPE_STRING)
+
+            if string.len(title) > 60 then
+                owner:ChatPrint("WARNING: Your money request title exceeded 60 characters, cutting off excess.")
+                title = string.sub(title, 1, 60)
+            end
+        else
+            title = "Money Request"
+        end
 
         local requester = owner
         local requestee = getply(self)
@@ -275,12 +287,13 @@ if SERVER then
 
         local request = {
             index = moneyRequestIndex,
+            title = title,
             requester = requester,
             requestee = requestee,
             amount = amount,
             expiration = CurTime() + 30,
-            success = function()
-                callbackSuccess()
+            success = function(title, player, amount)
+                callbackSuccess(title, player, amount)
             end,
             fail = function(failReason)
                 callbackFail(failReason)
@@ -289,6 +302,7 @@ if SERVER then
 
         if requestee:canAfford(amount) then
             net.Start("sf_moneyrequest")
+                net.WriteString(title)
                 net.WriteFloat(moneyRequestIndex)
                 net.WriteEntity(requester)
                 net.WriteFloat(math.Round(amount))
